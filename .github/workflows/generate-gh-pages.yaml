@@ -1,0 +1,49 @@
+# https://help.github.com/en/actions/automating-your-workflow-with-github-actions
+name: Generate gh-pages
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+
+    # https://github.com/actions/runner-images
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Install Calibre
+        run: |
+          sudo apt update
+          sudo apt install calibre  # for `ebook-convert` command
+
+      # https://github.com/actions/setup-node
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # https://github.com/actions/checkout
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      # https://github.com/honkit/honkit
+      - name: Run Honkit
+        run: |
+          npm install honkit --save-dev
+          npx honkit build . public --log=debug
+          npx honkit pdf . byte-of-python.pdf
+          npx honkit epub . byte-of-python.epub
+
+      # https://github.com/crazy-max/ghaction-github-pages
+      - name: Push to GitHub Pages
+        if: success()
+        uses: crazy-max/ghaction-github-pages@v2
+        with:
+          target_branch: gh-pages
+          build_dir: public
+          fqdn: bakoontz.github.io
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
